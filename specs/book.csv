@@ -1,0 +1,6 @@
+"column name",width,datatype
+name,40,TEXT
+author,40,TEXT
+publishedDate,10,DATE
+valid,1,BOOLEAN
+count,3,INTEGER
