@@ -8,11 +8,14 @@ const SpecsColumn = require("./SpecsColumn");
 const specsPath = path.join(__dirname, "..", "specs");
 const dataPath = path.join(__dirname, "..", "data");
 
+// all file names under specs/ and data/
 const specsFileNames = fs.readdirSync(specsPath);
 const dataFileNames = fs.readdirSync(dataPath);
 
+// keep a map of (spec name, array of specs) for referencing while reading data
 const specsMap = new Map();
 
+// a connection pool which allows aquiring clients under it
 const pool = new Pool({
   user: 'postgres',
   host: 'localhost',
@@ -27,6 +30,7 @@ pool.on('error', (err, client) => {
   client.release();
 });
 
+// First step, creating corresponding table for each spec .csv
 specsFileNames.forEach(fileName => {
   const instream = fs.createReadStream(path.join(specsPath, fileName));
   const outstream = new stream();
@@ -37,8 +41,11 @@ specsFileNames.forEach(fileName => {
   specsMap.set(specsName, []);
 
   rl.on("line", line => {
+    // skip the first line since it is for title names
     if (count++ > 0) {
       const arr = line.trim().split(",");
+
+      // keep a map of (spec name, array of specs) for referencing while reading data
       specsMap.get(specsName).push(new SpecsColumn(...arr));
     }
   });
@@ -47,31 +54,49 @@ specsFileNames.forEach(fileName => {
     let hasPrimaryKey = false;
     const specs = specsMap.get(specsName);
     const columnsSql = [];
+    const primaryKeys = [];
+
     specs.forEach(col => {
-      if (col.isPrimaryKey) hasPrimaryKey = true;
+      if (col.isPrimaryKey) {
+        hasPrimaryKey = true;
+        primaryKeys.push(col.name);
+      }
       columnsSql.push(col.getSql());
     });
-    if (!hasPrimaryKey) {
+
+    if (hasPrimaryKey) {
+      columnsSql.push(`PRIMARY KEY (${primaryKeys.join(",")})`);
+    } else {
+      // since the example in the exercise has no primary key,
+      // then I think adding a serial key by default would be better
       columnsSql.unshift("id SERIAL PRIMARY KEY");
     }
 
+    const createQuery = `CREATE TABLE IF NOT EXISTS ${specsName} (${columnsSql.join(",")});`;
     const client = await pool.connect();
     try {
-      await client.query(`CREATE TABLE IF NOT EXISTS ${specsName} (${columnsSql.join(",")});`);
-      console.log("done creating");
+      await client.query(createQuery);
+      console.log(`Done creating table for ${specsName}; query: ${createQuery};`);
+    } catch (err) {
+      console.log(`Error while creating table for ${specsName}; query: ${createQuery};`);
     } finally {
       client.release();
-      console.log("done releasing 1");
     }
 
     dataFileNames
-      .filter(name => name.includes(specsName))
+      .filter(name => name.slice(0, name.indexOf("_")) === specsName)
       .forEach(name => {
+        console.log(`Start inserting data from ${name} ...`);
+
+        // let lineCount = 0;
+        // let errorCount = 0;
         const instream = fs.createReadStream(path.join(dataPath, name));
         const outstream = new stream();
         const rl = readline.createInterface(instream, outstream);
 
         rl.on("line", async line => {
+          instream.pause();
+
           const columns = [];
           const values = [];
           let startIndex = 0;
@@ -81,18 +106,24 @@ specsFileNames.forEach(fileName => {
             startIndex += col.width;
           });
           let insertQuery = `INSERT INTO ${specsName}(${columns.join(",")}) VALUES(${columns.map((x, i) => `$${i + 1}`)});`;
-          console.log(`reading data: ${values}`);
 
           const client = await pool.connect();
           try {
             await client.query(insertQuery, values);
-            console.log("done inserting");
+            // lineCount++;
+          } catch (err) {
+            console.log(`Error (${err}) while inserting data from ${name}; query: ${insertQuery}; values: ${values}`);
+            // errorCount++;
           } finally {
             client.release();
-            console.log("done releasing 2");
           }
 
+          instream.resume();
         });
+
+        // rl.on("close", () => {
+        //   console.log(`close - ${name}; insert count: ${lineCount}; error count: ${errorCount}`);
+        // });
       });
   });
 });

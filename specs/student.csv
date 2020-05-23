@@ -1,0 +1,5 @@
+"column name",width,datatype,"is primary key"
+id,15,TEXT,1
+name,40,TEXT,0
+enrollment_date,10,DATE,0
+valid,1,BOOLEAN,0

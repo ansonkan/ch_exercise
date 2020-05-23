@@ -1,6 +1,6 @@
-"column name",width,datatype
-name,40,TEXT
-author,40,TEXT
-publishedDate,10,DATE
-valid,1,BOOLEAN
-count,3,INTEGER
+"column name",width,datatype,"is primary key"
+name,40,TEXT,1
+author,40,TEXT,1
+publishedDate,10,DATE,1
+valid,1,BOOLEAN,0
+count,3,INTEGER,0

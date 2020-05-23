@@ -3,7 +3,7 @@ class SpecsColumn {
     this.name = name;
     this.width = Number(width);
     this.type = type;
-    this.isPrimaryKey = isPrimaryKey;
+    this.isPrimaryKey = isPrimaryKey == 1 || isPrimaryKey == true;
   }
 
   getSql() {
@@ -25,7 +25,7 @@ class SpecsColumn {
         dataType = "";
     }
 
-    return `${this.name} ${dataType} ${this.isPrimaryKey ? "PRIMARY KEY" : ""}`;
+    return `${this.name} ${dataType}`;
   }
 }
 
