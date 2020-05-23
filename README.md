@@ -12,7 +12,7 @@
     │   ├── create_data.js
     │   ├── main_es.js
     │   ├── main_readline.js
-    │   └── SpecsColumn.js
+    │   └── Table.js
     └── ...
 
 1.  **`/src/main_es.js`**: The main program. It uses event-stream module to read file stream.
@@ -21,13 +21,13 @@
 
 3.  **`/src/create_data.js`**: This is for creating dummy data.
 
-4.  **`/src/SpecsColumn.js`**: A class representing each column of a spec, which stores the name, width, type and a primary flag.
+4.  **`/src/Table.js`**: Has two classes inside. Class Table represents a database table, which consists of a name and a array of columns. Class Column represents a database table column, which consists of the information from .csv spec.
 
 5.  **`/specs/testformat1.csv`**: The given exampe .csv.
 
-6.  **`/specs/book.csv`**: An new .csv with date column.
+6.  **`/specs/book.csv`**: An new .csv with a date column and specified compound key.
 
-7.  **`/specs/student.csv`**: An new .csv with specified primary key column.
+7.  **`/specs/student.csv`**: An new .csv with a date column and specified primary key column.
 
 8.  **`/data`**: A directory for all of the data text files.
 
